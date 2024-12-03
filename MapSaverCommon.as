@@ -30,6 +30,9 @@ void InitializeBlobHandlers()
 
 bool canSaveBlob(CBlob@ blob)
 {
+	const string name = blob.getName();
+	if (name == "spike") return false;
+
 	if (blob.hasTag("temp blob") || blob.hasTag("dead") || blob.hasTag("projectile")) return false;
 
 	if (blob.getPlayer() !is null) return false;
