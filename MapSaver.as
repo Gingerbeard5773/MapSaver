@@ -167,7 +167,7 @@ string SerializeAttachmentData(u16[]@ saved_netids)
 	return attachmentData;
 }
 
-void SaveMap(CMap@ map, const u8&in SaveSlot = 0)
+void SaveMap(CRules@ this, CMap@ map, const string&in SaveSlot = "AutoSave")
 {
 	InitializeBlobHandlers();
 
@@ -214,7 +214,7 @@ bool LoadSavedMap(CRules@ this, CMap@ map)
 
 	if (!isServer()) return true;
 
-	const u8 SaveSlot = this.get_u8("mapsaver_save_slot");
+	const string SaveSlot = this.get_string("mapsaver_save_slot");
 
 	ConfigFile config = ConfigFile();
 	if (!config.loadFile("../Cache/" + SaveFile + SaveSlot)) return false;
@@ -254,7 +254,7 @@ bool LoadSavedRules(CRules@ this, CMap@ map)
 
 	if (!isServer()) return true;
 
-	const u8 SaveSlot = this.get_u8("mapsaver_save_slot");
+	const string SaveSlot = this.get_string("mapsaver_save_slot");
 
 	ConfigFile config = ConfigFile();
 	if (!config.loadFile("../Cache/" + SaveFile + SaveSlot)) return false;

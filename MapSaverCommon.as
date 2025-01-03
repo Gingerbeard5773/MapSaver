@@ -11,7 +11,7 @@
  3) Delete the save file every time you modify blob handlers- doing this will avoid crashes caused by faulty data reading
 */
 
-const string SaveFile = "MapSaver_Save"; //MODIFY THIS TO ENSURE NO OTHER MODS OVERWRITE
+const string SaveFile = "MapSave_"; //MODIFY THIS TO ENSURE NO OTHER MODS OVERWRITE
 
 dictionary blobHandlers;
 void InitializeBlobHandlers()

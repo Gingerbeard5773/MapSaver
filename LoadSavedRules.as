@@ -8,8 +8,8 @@ void onInit(CRules@ this)
 {
 	Reset(this);
 
-	const string savemap = "!savemap [save slot] : save a map to a slot";
-	const string loadmap = "!loadsave [save slot] : load a map from a slot";
+	const string savemap = "!savemap [save name] : save a map to a slot";
+	const string loadmap = "!loadsave [save name] : load a map from a slot";
 	client_AddToChat(savemap, 0xff6678FF);
 	client_AddToChat(loadmap, 0xff6678FF);
 	print(savemap, 0xff66C6FF);
@@ -33,15 +33,17 @@ bool onServerProcessChat(CRules@ this, const string &in textIn, string &out text
 		const string[]@ tokens = textIn.split(" ");
 		if (tokens[0] == "!savemap")
 		{
-			const u8 SaveSlot = tokens.length > 1 ? parseInt(tokens[1]) : 0;
-			print("Map saved to your cache: Slot [ "+SaveSlot+" ]", 0xff66C6FF);
-			SaveMap(getMap(), SaveSlot);
+			const string SaveSlot = tokens.length > 1 ? tokens[1] : "AutoSave";
+			const string message = "Map saved to your cache- Name: "+SaveSlot;
+			print(message, 0xff66C6FF);
+			client_AddToChat(message, 0xff6678FF);
+			SaveMap(this, getMap(), SaveSlot);
 			return false;
 		}
 		else if (tokens[0] == "!loadsave")
 		{
-			const u8 SaveSlot = tokens.length > 1 ? parseInt(tokens[1]) : 0; 
-			this.set_u8("mapsaver_save_slot", SaveSlot);
+			const string SaveSlot = tokens.length > 1 ? tokens[1] : "AutoSave"; 
+			this.set_string("mapsaver_save_slot", SaveSlot);
 			this.set_bool("loaded_saved_map", false);
 			LoadNextMap();
 			return false;
