@@ -214,7 +214,7 @@ bool LoadSavedMap(CRules@ this, CMap@ map)
 
 	if (!isServer()) return true;
 
-	const string SaveSlot = this.get_string("mapsaver_save_slot");
+	const string SaveSlot = this.exists("mapsaver_save_slot") ? this.get_string("mapsaver_save_slot") : "AutoSave";
 
 	ConfigFile config = ConfigFile();
 	if (!config.loadFile("../Cache/" + SaveFile + SaveSlot)) return false;
@@ -254,7 +254,7 @@ bool LoadSavedRules(CRules@ this, CMap@ map)
 
 	if (!isServer()) return true;
 
-	const string SaveSlot = this.get_string("mapsaver_save_slot");
+	const string SaveSlot = this.exists("mapsaver_save_slot") ? this.get_string("mapsaver_save_slot") : "AutoSave";
 
 	ConfigFile config = ConfigFile();
 	if (!config.loadFile("../Cache/" + SaveFile + SaveSlot)) return false;
