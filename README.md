@@ -2,6 +2,12 @@
 
 The Map Saver is a tool for [King Arthur's Gold](https://github.com/transhumandesign/kag-base) that allows maps to be saved and then loaded at a later time, bypassing server shutdowns, crashes, and network failures.
 
+## What can it save?
+* Tiles and tile damage.
+* Blobs and their unique data/states. Attachments, inventories, etc.
+* Rules information such as day time.
+* Anything else specific that you add into the saver's logic.
+
 ## How it works
 The tool functions by serializing map information and blob information to a `.cfg` file, which is saved to your cache. The tool also allows for multiple saves to be created. Each save is its own `.cfg` file.
 
