@@ -11,7 +11,7 @@
  https://github.com/Gingerbeard5773/Zombies_Reborn
 */
 
-#include "MapSaverCommon.as";
+#include "MapSaverCommon.as"
 
 // store tiles using run line encoding
 string SerializeTileData(CMap@ map)
@@ -200,6 +200,8 @@ void SaveMap(CRules@ this, CMap@ map, const string&in SaveSlot = "AutoSave")
 	config.add_f32("day_time", dayTime);
 
 	config.saveFile(SaveFile+SaveSlot);
+
+	blobHandlers.deleteAll();
 }
 
 /*
@@ -244,6 +246,8 @@ bool LoadSavedMap(CRules@ this, CMap@ map)
 	LoadBlobs(map, blobData, @loaded_blobs);
 	LoadInventories(map, inventoryData, @loaded_blobs);
 	LoadAttachments(map, attachmentData, @loaded_blobs);
+
+	blobHandlers.deleteAll();
 
 	return true;
 }

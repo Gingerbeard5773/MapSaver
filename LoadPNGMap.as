@@ -1,9 +1,9 @@
 // loads a classic KAG .PNG map
 // fileName is "" on client!
 
-#include "BasePNGLoader.as";
-#include "MinimapHook.as";
-#include "MapSaver.as";
+#include "BasePNGLoader.as"
+#include "MinimapHook.as"
+#include "MapSaver.as"
 
 bool LoadMap(CMap@ map, const string& in fileName)
 {

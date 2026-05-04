@@ -2,7 +2,7 @@
 
 //this script MUST be the last script to be called in gamemode.cfg
 
-#include "MapSaver.as";
+#include "MapSaver.as"
 
 void onInit(CRules@ this)
 {
