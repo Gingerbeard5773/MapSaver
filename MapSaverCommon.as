@@ -8,10 +8,7 @@
  HOW TO SAVE CUSTOM BLOB DATA FOR YOUR MOD
  1) Create a blob handler class for your blob, with the applicable functions.
  2) Then set the class with the associated blob name into InitializeBlobHandlers().
- 3) Delete outdated save files every time you modify blob handlers- doing this will avoid crashes caused by faulty data reading
 */
-
-const string SaveFile = "MapSave_"; //MODIFY THIS TO ENSURE NO OTHER MODS OVERWRITE
 
 dictionary blobHandlers;
 void InitializeBlobHandlers()
@@ -71,6 +68,8 @@ class BlobDataHandler
 	// Note; all other classes will need updated if you change the amount of data that is processed in this base class
 	void LoadBlobData(CBlob@ blob, const string[]@ data)
 	{
+		if (data.length < 9) { error("MapSaver: Failed to load basic blob data ["+blob.getName()+"]"); return; }
+
 		const f32 health = parseFloat(data[3]);
 		const int team = parseInt(data[4]);
 		const bool isStatic = parseBool(data[5]);
@@ -173,14 +172,14 @@ class LeverBlobHandler : BlobDataHandler
 	string Serialize(CBlob@ blob) override
 	{
 		string data = BlobDataHandler::Serialize(blob);
-		data += (blob.get_bool("activated") ? "1;" : "0;");
+		data += blob.get_bool("activated") ? "1;" : "0;";
 		return data;
 	}
 
 	void LoadBlobData(CBlob@ blob, const string[]@ data) override
 	{
 		BlobDataHandler::LoadBlobData(blob, data);
-		const bool activated = parseBool(data[9]);
+		const bool activated = data.length > 9 ? parseBool(data[9]) : false;
 		blob.set_bool("activated", activated);
 	}
 }

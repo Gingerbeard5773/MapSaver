@@ -33,17 +33,17 @@ bool onServerProcessChat(CRules@ this, const string &in textIn, string &out text
 		const string[]@ tokens = textIn.split(" ");
 		if (tokens[0] == "!savemap")
 		{
-			const string SaveSlot = tokens.length > 1 ? tokens[1] : "AutoSave";
-			const string message = "Map saved to your cache- Name: "+SaveSlot;
+			const string save_slot = tokens.length > 1 ? tokens[1] : "AutoSave";
+			const string message = "Map saved to your cache- Name: "+save_slot;
 			print(message, 0xff66C6FF);
 			client_AddToChat(message, 0xff6678FF);
-			SaveMap(this, getMap(), SaveSlot);
+			SaveMap(this, getMap(), save_slot);
 			return false;
 		}
 		else if (tokens[0] == "!loadsave")
 		{
-			const string SaveSlot = tokens.length > 1 ? tokens[1] : "AutoSave"; 
-			this.set_string("mapsaver_save_slot", SaveSlot);
+			const string save_slot = tokens.length > 1 ? tokens[1] : "AutoSave"; 
+			this.set_string("mapsaver_save_slot", save_slot);
 			this.set_bool("loaded_saved_map", false);
 			LoadNextMap();
 			return false;

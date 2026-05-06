@@ -9,14 +9,18 @@
  For an example of a complete implementation, visit Zombies Reborn- which is the mod this tool was originally created for.
  https://discord.gg/V29BBeba3C
  https://github.com/Gingerbeard5773/Zombies_Reborn
+ 
+ Errors from this script typically mean that a save file is corrupted or outdated!
 */
 
 #include "MapSaverCommon.as"
 
+const string SaveFile = "MapSave_"; //MODIFY THIS TO ENSURE NO OTHER MODS OVERWRITE
+
 // store tiles using run line encoding
 string SerializeTileData(CMap@ map)
 {
-	string mapData = "";
+	string map_data = "";
 
 	u16 last_type = map.getTile(0).type;
 	u32 tile_count = 1;
@@ -30,20 +34,20 @@ string SerializeTileData(CMap@ map)
 		}
 		else
 		{
-			mapData += last_type + " " + tile_count + ";";
+			map_data += last_type + " " + tile_count + ";";
 			last_type = type;
 			tile_count = 1;
 		}
 	}
-	mapData += last_type + " " + tile_count + ";";
+	map_data += last_type + " " + tile_count + ";";
 
-	return mapData;
+	return map_data;
 }
 
 // store dirt background using run line encoding
 string SerializeDirtData(CMap@ map)
 {
-	string mapData = "";
+	string map_data = "";
 
 	bool was_dirt = map.getTile(0).dirt == 80;
 	u32 tile_count = 1;
@@ -57,20 +61,20 @@ string SerializeDirtData(CMap@ map)
 		}
 		else
 		{
-			mapData += (was_dirt ? "1" : "0") + " " + tile_count + ";";
+			map_data += (was_dirt ? "1" : "0") + " " + tile_count + ";";
 			was_dirt = is_dirt;
 			tile_count = 1;
 		}
 	}
-	mapData += (was_dirt ? "1" : "0") + " " + tile_count + ";";
+	map_data += (was_dirt ? "1" : "0") + " " + tile_count + ";";
 
-	return mapData;
+	return map_data;
 }
 
 // store water using run line encoding
 string SerializeWaterData(CMap@ map)
 {
-	string mapData = "";
+	string map_data = "";
 
 	bool was_water = map.isInWater(map.getTileWorldPosition(0));
 	u32 tile_count = 1;
@@ -84,21 +88,21 @@ string SerializeWaterData(CMap@ map)
 		}
 		else
 		{
-			mapData += (was_water ? "1" : "0") + " " + tile_count + ";";
+			map_data += (was_water ? "1" : "0") + " " + tile_count + ";";
 			was_water = has_water;
 			tile_count = 1;
 		}
 	}
-	mapData += (was_water ? "1" : "0") + " " + tile_count + ";";
+	map_data += (was_water ? "1" : "0") + " " + tile_count + ";";
 
-	return mapData;
+	return map_data;
 }
 
 string SerializeBlobData(u16[]@ saved_netids)
 {
 	CBlob@[] blobs;
 	getBlobs(@blobs);
-	string blobData = "";
+	string blob_data = "";
 
 	for (int i = 0; i < blobs.length; i++)
 	{
@@ -111,16 +115,16 @@ string SerializeBlobData(u16[]@ saved_netids)
 		const string data = handler.Serialize(blob);
 		if (!data.isEmpty())
 		{
-			blobData += data + ";"; // extra semicolon to seperate each blob
+			blob_data += data + ";"; // extra semicolon to seperate each blob
 		}
 	}
 
-	return blobData;
+	return blob_data;
 }
 
 string SerializeInventoryData(u16[]@ saved_netids)
 {
-	string inventoryData;
+	string inventory_data;
 
 	for (u16 i = 0; i < saved_netids.length; i++)
 	{
@@ -133,15 +137,15 @@ string SerializeInventoryData(u16[]@ saved_netids)
 		const int parent_index = saved_netids.find(parent.getNetworkID());
 		if (parent_index == -1) continue;
 
-		inventoryData += i + " " + parent_index + ";";
+		inventory_data += i + " " + parent_index + ";";
 	}
 
-	return inventoryData;
+	return inventory_data;
 }
 
 string SerializeAttachmentData(u16[]@ saved_netids)
 {
-	string attachmentData;
+	string attachment_data;
 
 	for (u16 i = 0; i < saved_netids.length; i++)
 	{
@@ -160,14 +164,14 @@ string SerializeAttachmentData(u16[]@ saved_netids)
 			const int occupied_index = saved_netids.find(occupied.getNetworkID());
 			if (occupied_index == -1) continue;
 
-			attachmentData += i + " " + occupied_index + " " + a + ";";
+			attachment_data += i + " " + occupied_index + " " + a + ";";
 		}
 	}
 
-	return attachmentData;
+	return attachment_data;
 }
 
-void SaveMap(CRules@ this, CMap@ map, const string&in SaveSlot = "AutoSave")
+void SaveMap(CRules@ this, CMap@ map, const string&in save_slot = "AutoSave")
 {
 	InitializeBlobHandlers();
 
@@ -175,31 +179,31 @@ void SaveMap(CRules@ this, CMap@ map, const string&in SaveSlot = "AutoSave")
 
 	// collect all map data
 	const string map_dimensions = map.tilemapwidth + ";" + map.tilemapheight;
-	const string mapData = SerializeTileData(map);
-	const string dirtData = SerializeDirtData(map);
-	const string waterData = SerializeWaterData(map);
+	const string map_data = SerializeTileData(map);
+	const string dirt_data = SerializeDirtData(map);
+	const string water_data = SerializeWaterData(map);
 
 	// collect all blob data
 	u16[] saved_netids;
-	const string blobData = SerializeBlobData(@saved_netids);
-	const string inventoryData = SerializeInventoryData(@saved_netids);
-	const string attachmentData = SerializeAttachmentData(@saved_netids);
+	const string blob_data = SerializeBlobData(@saved_netids);
+	const string inventory_data = SerializeInventoryData(@saved_netids);
+	const string attachment_data = SerializeAttachmentData(@saved_netids);
 
 	// collect rules data
 	CRules@ rules = getRules();
-	const f32 dayTime = map.getDayTime();
+	const f32 day_time = map.getDayTime();
 
 	// save data to config file
 	config.add_string("map_dimensions", map_dimensions);
-	config.add_string("map_data", mapData);
-	config.add_string("dirt_data", dirtData);
-	config.add_string("water_data", waterData);
-	config.add_string("blob_data", blobData);
-	config.add_string("inventory_data", inventoryData);
-	config.add_string("attachment_data", attachmentData);
-	config.add_f32("day_time", dayTime);
+	config.add_string("map_data", map_data);
+	config.add_string("dirt_data", dirt_data);
+	config.add_string("water_data", water_data);
+	config.add_string("blob_data", blob_data);
+	config.add_string("inventory_data", inventory_data);
+	config.add_string("attachment_data", attachment_data);
+	config.add_f32("day_time", day_time);
 
-	config.saveFile(SaveFile+SaveSlot);
+	config.saveFile(SaveFile + save_slot);
 
 	blobHandlers.deleteAll();
 }
@@ -207,7 +211,7 @@ void SaveMap(CRules@ this, CMap@ map, const string&in SaveSlot = "AutoSave")
 /*
  Loading is divided into two parts.
  LoadSavedMap: called before rules scripts are initialized
- LoadSavedRules: called after rules scripts are initialized- for the purpose of overwriting variables
+ LoadSavedRules: called after rules scripts are initialized- for overwriting variables set onRestart in rules scripts
 */
 
 bool LoadSavedMap(CRules@ this, CMap@ map)
@@ -216,10 +220,10 @@ bool LoadSavedMap(CRules@ this, CMap@ map)
 
 	if (!isServer()) return true;
 
-	const string SaveSlot = this.exists("mapsaver_save_slot") ? this.get_string("mapsaver_save_slot") : "AutoSave";
+	const string save_slot = this.exists("mapsaver_save_slot") ? this.get_string("mapsaver_save_slot") : "AutoSave";
 
 	ConfigFile config = ConfigFile();
-	if (!config.loadFile("../Cache/" + SaveFile + SaveSlot)) return false;
+	if (!config.loadFile("../Cache/" + SaveFile + save_slot)) return false;
 
 	if (!config.exists("map_dimensions")) return false;
 
@@ -229,23 +233,23 @@ bool LoadSavedMap(CRules@ this, CMap@ map)
 	const int width = parseInt(map_dimensions[0]);
 	const int height = parseInt(map_dimensions[1]);
 
-	const string mapData = config.read_string("map_data");
-	const string waterData = config.read_string("water_data");
-	const string blobData = config.read_string("blob_data");
-	const string inventoryData = config.read_string("inventory_data");
-	const string attachmentData = config.read_string("attachment_data");
+	const string map_data = config.read_string("map_data", "");
+	const string water_data = config.read_string("water_data", "");
+	const string blob_data = config.read_string("blob_data", "");
+	const string inventory_data = config.read_string("inventory_data", "");
+	const string attachment_data = config.read_string("attachment_data", "");
 
 	map.CreateTileMap(width, height, 8.0f, "Sprites/world.png");
 
 	InitializeBlobHandlers();
 
-	LoadTiles(map, mapData.split(";"));
-	LoadWater(map, waterData.split(";"));
+	LoadTiles(map, map_data);
+	LoadWater(map, water_data);
 
 	CBlob@[] loaded_blobs;
-	LoadBlobs(map, blobData, @loaded_blobs);
-	LoadInventories(map, inventoryData, @loaded_blobs);
-	LoadAttachments(map, attachmentData, @loaded_blobs);
+	LoadBlobs(map, blob_data, @loaded_blobs);
+	LoadInventories(map, inventory_data, @loaded_blobs);
+	LoadAttachments(map, attachment_data, @loaded_blobs);
 
 	blobHandlers.deleteAll();
 
@@ -258,30 +262,31 @@ bool LoadSavedRules(CRules@ this, CMap@ map)
 
 	if (!isServer()) return true;
 
-	const string SaveSlot = this.exists("mapsaver_save_slot") ? this.get_string("mapsaver_save_slot") : "AutoSave";
+	const string save_slot = this.exists("mapsaver_save_slot") ? this.get_string("mapsaver_save_slot") : "AutoSave";
 
 	ConfigFile config = ConfigFile();
-	if (!config.loadFile("../Cache/" + SaveFile + SaveSlot)) return false;
+	if (!config.loadFile("../Cache/" + SaveFile + save_slot)) return false;
 
-	const string dirtData = config.read_string("dirt_data");
-	const f32 dayTime = config.read_f32("day_time");
-	map.SetDayTime(dayTime);
+	const string dirt_data = config.read_string("dirt_data", "");
+	const f32 day_time = config.read_f32("day_time", 0.2f);
+	map.SetDayTime(day_time);
 
 	//dirt data has to be loaded late because of an engine issue..
-	LoadDirt(map, dirtData.split(";"));
+	LoadDirt(map, dirt_data);
 
 	this.set_bool("loaded_saved_map", true);
 
 	return true;
 }
 
-void LoadTiles(CMap@ map, const string[]&in mapTiles)
+void LoadTiles(CMap@ map, const string&in map_data)
 {
+	const string[]@ tiles = map_data.split(";");
 	u32 current_index = 0;
-	for (int i = 0; i < mapTiles.length; i++)
+	for (int i = 0; i < tiles.length - 1; i++)
 	{
-		string[]@ data = mapTiles[i].split(" ");
-		if (data.length != 2) continue;
+		string[]@ data = tiles[i].split(" ");
+		if (data.length != 2) { error("MapSaver: Failed tile indices"); continue; }
 
 		const int tile_type = parseInt(data[0]);
 		const int tile_count = parseInt(data[1]);
@@ -293,13 +298,14 @@ void LoadTiles(CMap@ map, const string[]&in mapTiles)
 	}
 }
 
-void LoadDirt(CMap@ map, const string[]&in mapTiles)
+void LoadDirt(CMap@ map, const string&in map_data)
 {
+	const string[]@ tiles = map_data.split(";");
 	u32 current_index = 0;
-	for (int i = 0; i < mapTiles.length; i++)
+	for (int i = 0; i < tiles.length - 1; i++)
 	{
-		string[]@ data = mapTiles[i].split(" ");
-		if (data.length != 2) continue;
+		string[]@ data = tiles[i].split(" ");
+		if (data.length != 2) { error("MapSaver: Failed dirt indices"); continue; }
 
 		const bool is_dirt = parseBool(data[0]);
 		const int tile_count = parseInt(data[1]);
@@ -308,6 +314,7 @@ void LoadDirt(CMap@ map, const string[]&in mapTiles)
 		{
 			if (is_dirt)
 			{
+				map.RemoveTileFlag(current_index, Tile::LIGHT_SOURCE);
 				map.SetTileDirt(current_index, 80);
 			}
 			current_index++;
@@ -315,13 +322,14 @@ void LoadDirt(CMap@ map, const string[]&in mapTiles)
 	}
 }
 
-void LoadWater(CMap@ map, const string[]&in mapTiles)
+void LoadWater(CMap@ map, const string&in map_data)
 {
+	const string[]@ tiles = map_data.split(";");
 	u32 current_index = 0;
-	for (int i = 0; i < mapTiles.length; i++)
+	for (int i = 0; i < tiles.length - 1; i++)
 	{
-		string[]@ data = mapTiles[i].split(" ");
-		if (data.length != 2) continue;
+		string[]@ data = tiles[i].split(" ");
+		if (data.length != 2) { error("MapSaver: Failed water indices"); continue; }
 
 		const bool has_water = parseBool(data[0]);
 		const int tile_count = parseInt(data[1]);
@@ -333,17 +341,16 @@ void LoadWater(CMap@ map, const string[]&in mapTiles)
 	}
 }
 
-void LoadBlobs(CMap@ map, const string&in blobData, CBlob@[]@ loaded_blobs)
+void LoadBlobs(CMap@ map, const string&in blob_data, CBlob@[]@ loaded_blobs)
 {
 	// each blob is separated by 2x semicolon
-	const string[]@ blobs = blobData.split(";;");
-
+	const string[]@ blobs = blob_data.split(";;");
 	for (int i = 0; i < blobs.length; i++)
 	{
 		if (blobs[i].isEmpty()) continue;
 
 		string[]@ data = blobs[i].split(";");
-		if (data.length == 0) continue;
+		if (data.length < 3) { error("MapSaver: Failed indexing for blob data"); continue; }
 
 		const string name = data[0];
 		const Vec2f pos(parseFloat(data[1]), parseFloat(data[2]));
@@ -358,35 +365,43 @@ void LoadBlobs(CMap@ map, const string&in blobData, CBlob@[]@ loaded_blobs)
 	}
 }
 
-void LoadInventories(CMap@ map, const string&in inventoryData, CBlob@[]@ loaded_blobs)
+void LoadInventories(CMap@ map, const string&in inventory_data, CBlob@[]@ loaded_blobs)
 {
-	const string[]@ pairs = inventoryData.split(";");
-	for (int i = 0; i < pairs.length; i++)
+	const string[]@ pairs = inventory_data.split(";");
+	for (int i = 0; i < pairs.length - 1; i++)
 	{
 		const string[]@ indices = pairs[i].split(" ");
-		if (indices.length != 2) return;
+		if (indices.length != 2) { error("MapSaver: Failed inventory indices"); continue; }
+		
+		const int blob_index = parseInt(indices[0]);
+		const int parent_index = parseInt(indices[1]);
+		if (blob_index >= loaded_blobs.length || parent_index >= loaded_blobs.length) { error("MapSaver: Failed inventory indices [out of bounds]"); continue; }
 
-		CBlob@ blob = loaded_blobs[parseInt(indices[0])];
-		CBlob@ parent = loaded_blobs[parseInt(indices[1])];
+		CBlob@ blob = loaded_blobs[blob_index];
+		CBlob@ parent = loaded_blobs[parent_index];
 		if (blob is null || parent is null) continue;
 
 		parent.server_PutInInventory(blob);
 	}
 }
 
-void LoadAttachments(CMap@ map, const string&in attachmentData, CBlob@[]@ loaded_blobs)
+void LoadAttachments(CMap@ map, const string&in attachment_data, CBlob@[]@ loaded_blobs)
 {
-	const string[]@ pairs = attachmentData.split(";");
-	for (int i = 0; i < pairs.length; i++)
+	const string[]@ pairs = attachment_data.split(";");
+	for (int i = 0; i < pairs.length - 1; i++)
 	{
 		const string[]@ indices = pairs[i].split(" ");
-		if (indices.length != 3) return;
+		if (indices.length != 3) { error("MapSaver: Failed attachment indices"); continue; }
 
-		CBlob@ blob = loaded_blobs[parseInt(indices[0])];
-		CBlob@ parent = loaded_blobs[parseInt(indices[1])];
-		const int ap_index = parseInt(indices[2]);
+		const int blob_index = parseInt(indices[0]);
+		const int parent_index = parseInt(indices[1]);
+		if (blob_index >= loaded_blobs.length || parent_index >= loaded_blobs.length) { error("MapSaver: Failed attachment indices [out of bounds]"); continue; }
+
+		CBlob@ blob = loaded_blobs[blob_index];
+		CBlob@ parent = loaded_blobs[parent_index];
 		if (blob is null || parent is null) continue;
 
+		const int ap_index = parseInt(indices[2]);
 		blob.server_AttachTo(parent, ap_index);
 	}
 }
