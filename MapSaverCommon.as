@@ -186,12 +186,23 @@ class LeverBlobHandler : BlobDataHandler
 
 class TreeBlobHandler : BlobDataHandler
 {
+	string Serialize(CBlob@ blob) override
+	{
+		string data = BlobDataHandler::Serialize(blob);
+		data += blob.get_u8("grown_times") + ";";
+		return data;
+	}
+
 	CBlob@ CreateBlob(const string&in name, const Vec2f&in pos, const string[]@ data) override
 	{
 		CBlob@ blob = server_CreateBlobNoInit(name);
-		blob.setPosition(pos);
-		blob.Tag("startbig");
-		blob.Init();
+		if (blob !is null)
+		{
+			const u8 grown_times = data.length > 9 ? parseInt(data[9]) : 15;
+			blob.set_u8("grown_times", grown_times);
+			blob.setPosition(pos);
+			blob.Init();
+		}
 		return blob;
 	}
 }
