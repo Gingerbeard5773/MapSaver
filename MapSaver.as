@@ -171,6 +171,60 @@ string SerializeAttachmentData(u16[]@ saved_netids)
 	return attachment_data;
 }
 
+/*
+ This implementation for saving damage owner players could be better.
+ For now, it only works if the player is online at the instance the world is saved as well as during loading.
+ This could be fixed if damage owner players were completely moved to a string based format [e.g blob.get_string("damage_owner_player") ]
+*/
+string SerializeDamageOwnerPlayerData(u16[]@ saved_netids)
+{
+	string owner_data;
+
+	string[] player_names;
+
+	for (int i = 0; i < getPlayerCount(); i++)
+	{
+		CPlayer@ player = getPlayer(i);
+		if (player is null || player.isBot()) continue;
+
+		player_names.push_back(player.getUsername());
+	}
+
+	u16[][] blob_indexes(player_names.length);
+
+	for (u16 i = 0; i < saved_netids.length; i++)
+	{
+		CBlob@ blob = getBlobByNetworkID(saved_netids[i]);
+		if (blob is null) continue;
+
+		CPlayer@ owner_player = blob.getDamageOwnerPlayer();
+		if (owner_player is null) continue;
+
+		if (blob is owner_player.getBlob()) continue;
+
+		const int player_index = player_names.find(owner_player.getUsername());
+		if (player_index == -1) continue;
+
+		blob_indexes[player_index].push_back(i);
+	}
+	
+	for (int i = 0; i < player_names.length; i++)
+	{
+		if (blob_indexes[i].length == 0) continue;
+
+		owner_data += player_names[i] + "{";
+
+		for (int b = 0; b < blob_indexes[i].length; b++)
+		{
+			owner_data += blob_indexes[i][b] + ";";
+		}
+
+		owner_data += "}";
+	}
+
+	return owner_data;
+}
+
 void SaveMap(CRules@ this, CMap@ map, const string&in save_slot = "AutoSave")
 {
 	InitializeBlobHandlers();
@@ -188,6 +242,7 @@ void SaveMap(CRules@ this, CMap@ map, const string&in save_slot = "AutoSave")
 	const string blob_data = SerializeBlobData(@saved_netids);
 	const string inventory_data = SerializeInventoryData(@saved_netids);
 	const string attachment_data = SerializeAttachmentData(@saved_netids);
+	const string owner_data = SerializeDamageOwnerPlayerData(@saved_netids);
 
 	// collect rules data
 	CRules@ rules = getRules();
@@ -201,6 +256,7 @@ void SaveMap(CRules@ this, CMap@ map, const string&in save_slot = "AutoSave")
 	config.add_string("blob_data", blob_data);
 	config.add_string("inventory_data", inventory_data);
 	config.add_string("attachment_data", attachment_data);
+	config.add_string("owner_data", owner_data);
 	config.add_f32("day_time", day_time);
 
 	config.saveFile(SaveFile + save_slot);
@@ -238,6 +294,7 @@ bool LoadSavedMap(CRules@ this, CMap@ map)
 	const string blob_data = config.read_string("blob_data", "");
 	const string inventory_data = config.read_string("inventory_data", "");
 	const string attachment_data = config.read_string("attachment_data", "");
+	const string owner_data = config.read_string("owner_data", "");
 
 	map.CreateTileMap(width, height, 8.0f, "Sprites/world.png");
 
@@ -250,6 +307,7 @@ bool LoadSavedMap(CRules@ this, CMap@ map)
 	LoadBlobs(map, blob_data, @loaded_blobs);
 	LoadInventories(map, inventory_data, @loaded_blobs);
 	LoadAttachments(map, attachment_data, @loaded_blobs);
+	LoadDamageOwnerPlayers(owner_data, @loaded_blobs);
 
 	blobHandlers.deleteAll();
 
@@ -403,5 +461,31 @@ void LoadAttachments(CMap@ map, const string&in attachment_data, CBlob@[]@ loade
 
 		const int ap_index = parseInt(indices[2]);
 		blob.server_AttachTo(parent, ap_index);
+	}
+}
+
+void LoadDamageOwnerPlayers(const string&in owner_data, CBlob@[]@ loaded_blobs)
+{
+	const string[]@ players = owner_data.split("}");
+	for (int p = 0; p < players.length - 1; p++)
+	{
+		const string[]@ owner_compartments = players[p].split("{");
+		if (owner_compartments.length != 2) { error("MapSaver: Failed owner compartments"); continue; }
+
+		const string player_name = owner_compartments[0];
+		CPlayer@ player = getPlayerByUsername(player_name); 
+		if (player is null) continue;
+
+		const string[]@ blob_indexes = owner_compartments[1].split(";");
+		for (int i = 0; i < blob_indexes.length - 1; i++)
+		{
+			const int blob_index = parseInt(blob_indexes[i]);
+			if (blob_index >= loaded_blobs.length) { error("MapSaver: Failed owner [out of bounds]"); continue; }
+
+			CBlob@ blob = loaded_blobs[blob_index];
+			if (blob is null) continue;
+
+			blob.SetDamageOwnerPlayer(player);
+		}
 	}
 }
