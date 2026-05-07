@@ -52,3 +52,49 @@ bool onServerProcessChat(CRules@ this, const string &in textIn, string &out text
 
 	return true;
 }
+
+void onPlayerLeave(CRules@ this, CPlayer@ player)
+{
+	onDamageOwnerLeave(this, player);
+}
+
+void onNewPlayerJoin(CRules@ this, CPlayer@ player)
+{
+	onDamageOwnerRejoin(this, player);
+}
+
+void onDamageOwnerLeave(CRules@ this, CPlayer@ player)
+{
+	CBlob@[] blobs;
+	getBlobs(@blobs);
+
+	// cache our leaving player's owned blobs
+	for (int i = 0; i < blobs.length; i++)
+	{
+		CBlob@ blob = blobs[i];
+
+		CPlayer@ owner_player = blob.getDamageOwnerPlayer();
+		if (owner_player is null || owner_player !is player || owner_player.isBot()) continue;
+
+		blob.set_string("damage_owner", player.getUsername());
+	}
+}
+
+void onDamageOwnerRejoin(CRules@ this, CPlayer@ player)
+{
+	CBlob@[] blobs;
+	getBlobs(@blobs);
+
+	// set our damage owner blobs for our new player
+	for (int i = 0; i < blobs.length; i++)
+	{
+		CBlob@ blob = blobs[i];
+		if (!blob.exists("damage_owner")) continue;
+
+		if (blob.getDamageOwnerPlayer() !is null) continue;
+
+		if (blob.get_string("damage_owner") != player.getUsername()) continue;
+
+		blob.SetDamageOwnerPlayer(player);
+	}
+}
